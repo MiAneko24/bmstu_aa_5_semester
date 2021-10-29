@@ -16,7 +16,7 @@ class Matrix:
         if matrix is not None:
             self.matrix = matrix
         else:
-            self.matrix = [[0 for _ in range(self.size)] * self.size]
+            self.matrix = np.zeros((size, size))
 
     def __str__(self):
         return f'size = {self.size}, mul = {self.mult}, matrix = {self.matrix}'
@@ -33,23 +33,24 @@ class Matrix:
 
 
 def calculateDet(m: Matrix):
-    s = 0
-    if m.size == 2:
-        s = (m.matrix[0][0] * m.matrix[1][1] - m.matrix[0][1] * m.matrix[1][0]) * m.mult
-    else:
-        for i in range(m.size):
-            mul = m.matrix[0][i] * m.mult
-            if i % 2 == 1:
-                mul *= -1
-            size = m.size - 1
-            matrix = []
-            for j in range(1, m.size):
-                matrix.append([])
-                for k in range(m.size):
-                    if k != i:
-                        matrix[-1].append(m.matrix[j][k])
-            s += calculateDet(Matrix(size, mul, matrix))
-    return s
+    s = 0                                                   # 1
+    if m.size == 1:                                         # 2
+        s = m.matrix[0][0] * m.mult                         # 3
+    else:                                                   
+        for i in range(m.size):                             # 4
+            mul = m.matrix[0][i] * m.mult                   # 5
+            if i % 2 == 1:                                  # 6
+                mul *= -1                                   # 7
+            size = m.size - 1                               # 8
+            new_mat = Matrix(size, mul)                     # 9
+            for j in range(1, m.size):                      # 10
+                cnt = 0                                     # 11
+                for k in range(m.size):                     # 12
+                    if k != i:                              # 13
+                        new_mat.matrix[j - 1][cnt] = m.matrix[j][k] # 14
+                        cnt += 1                                    # 15
+            s += calculateDet(new_mat)                              # 16
+    return s                                                        
 
 
 def calculateDetThreading(matrixes, returnList: list):
@@ -149,7 +150,7 @@ def tests():
     threadCount = 1
     sizes = []
     minMatrixSize = 5
-    maxMatrixSize = 13
+    maxMatrixSize = 10
     maxThreadsCount = 32
     repeatCount = 5
     results = []
@@ -189,5 +190,5 @@ def tests():
 
 if __name__ == '__main__':
     freeze_support()
-    # ui()
+    #ui()
     tests()
