@@ -60,7 +60,7 @@ def calculateDetThreading(matrixes, returnList: list):
     returnList.append(s)
 
 
-class Solver:
+class Dispatcher:
     def __init__(self, size: int = 0, matrix: Matrix = None):
         self.m = matrix
         if size == 0: size = 9
@@ -70,7 +70,7 @@ class Solver:
         self.threadManager = Manager()
         self.returnList = self.threadManager.list()
 
-    def solve(self):
+    def dispatch(self):
         activeThreads = []
         matrixPerThread = self.m.size / self.threadCount
         allMatrixes = []
@@ -130,9 +130,9 @@ def ui():
     if a != '':
         print(f'Введите размер матрицы для автоматической генерации: ', end='')
         size = int(input())
-        a = Solver(size=size)
+        a = Dispatcher(size=size)
     else:
-        a = Solver(matrix=inputMatrix())
+        a = Dispatcher(matrix=inputMatrix())
     t = time.time()
     print('Рекурсивно вычисленный определитель', calculateDet(a.m))
     t = time.time() - t
@@ -141,7 +141,7 @@ def ui():
     while threadCount <= 32:
         a.threadCount = threadCount
         t = time.time()
-        res = a.solve()
+        res = a.dispatch()
         print(f'Количество потоков: {threadCount}, время выполнения = {time.time() - t}, результат = {res}')
         threadCount *= 2
 
@@ -149,10 +149,10 @@ def ui():
 def tests():
     threadCount = 1
     sizes = []
-    minMatrixSize = 5
-    maxMatrixSize = 10
-    maxThreadsCount = 32
-    repeatCount = 5
+    minMatrixSize = 4
+    maxMatrixSize = 9
+    maxThreadsCount = 24
+    repeatCount = 10
     results = []
     for i in range(minMatrixSize, maxMatrixSize + 1):
         sizes.append(i)
@@ -160,20 +160,23 @@ def tests():
     while threadCount <= maxThreadsCount:
         print('threads', threadCount)
         timeResults = []
-        a = Solver()
+        a = Dispatcher()
         a.threadCount = threadCount
         for i in range(minMatrixSize, maxMatrixSize + 1):
             t = 0
             for j in range(repeatCount):
                 a.m = Matrix(size=i).randomize()
                 t_start = time.time()
-                a.solve()
+                a.dispatch()
                 t += (time.time() - t_start) * 1000
             t /= repeatCount
             timeResults.append(t)
         results.append(timeResults)
         plt.plot(sizes, timeResults, label=f'{threadCount} поток(ов)')
-        threadCount *= 2
+        if (threadCount == 16):
+            threadCount = 6 * 4
+        else:
+            threadCount *= 2
     for j in range(len(results[0])):
         for i in range(len(results)):
             if (i != len(results) - 1):
@@ -184,11 +187,11 @@ def tests():
     plt.legend(loc='upper left')
     plt.xlabel('Размерность')
     plt.ylabel('Время работы (мс)')
-    plt.title('Зависимость времени работы от размерности матрицы и количества потоков')
+    # plt.title('Зависимость времени работы от размерности матрицы и количества потоков')
     plt.show()
 
 
 if __name__ == '__main__':
     freeze_support()
-    #ui()
+    # ui()
     tests()
