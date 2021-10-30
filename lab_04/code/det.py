@@ -63,7 +63,6 @@ def calculateDetThreading(matrixes, returnList: list):
 class Dispatcher:
     def __init__(self, size: int = 0, matrix: Matrix = None):
         self.m = matrix
-        if size == 0: size = 9
         if self.m is None:
             self.m = Matrix(size).randomize()
         self.threadCount = 1
@@ -193,5 +192,5 @@ def tests():
 
 if __name__ == '__main__':
     freeze_support()
-    # ui()
-    tests()
+    ui()
+    # tests()
