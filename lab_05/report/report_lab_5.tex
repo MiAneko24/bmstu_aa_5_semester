@@ -10,6 +10,10 @@
 \tableofcontents
 \lstset{
 	language = python,
+	extendedchars = \true,
+	keepspaces=true,
+	breaklines=true,
+	inputencoding=utf8,
 	basicstyle=\small\sffamily,
 	numbers=left,
 	numberstyle=\tiny,
@@ -22,7 +26,6 @@
 	frame=single,
 	tabsize=2,
 	captionpos=t,
-	breaklines=true,
 	breakatwhitespace=false,
 	escapeinside={\#*}{*)}
 }
@@ -63,22 +66,55 @@
 \section{Выделенные стадии конвейерной обработки}
 В данной работе в качестве алгоритма, реализованного для конвейеризации, используется шифрование паролей с сохранением в базу данных. Таким образом, было выделено три ленты конвейера:
 \begin{enumerate}
-	\item Модификация исходных данных выбранным способом для обеспечения невозможности расшифровки без информации об используемом методе.
-	\item Двойное последовательное хеширование полученной строки для большей безопасности.
-	\item Загрузка полученного значение в базу данных.
+	\item Загрузка логинов и паролей из базы данных.
+	\item Многократное последовательное хеширование полученной строки для большей безопасности.
+	\item Загрузка полученного значения в базу данных.
 \end{enumerate}
+\subsection{Загрузка логинов и паролей из базы данных}
+Изначальные логины пользователей и пароли для хеширования загружаются из базы данных.
+
+\subsection{Многократное последовательное хеширование}
+Существует много алгоритмов хеш-шифрования данных, наиболее распространенные из них приведены ниже \cite{hashes}.
+\begin{enumerate}
+	\item MD5 - алгоритм дайджеста сообщений (Message-Digest algorithm), генерирует 128-битное хэш-значение; не может предотвратить коллизии и, следовательно, может быть взломан.
+	\item SHA-1 - Secure Hash Algorithm 1, может генерировать дайджест сообщения - 160-битное хеш-значение, обычная форма - 40 шестнадцатеричных чисел; не является достаточно безопасным, был обнаружен эффективного метод атаки.
+	\item SHA-2/SHA-256 - Secure Hash Algorithm 2, генерирует 256-битное хеш-значение; существуют алгоритмы SHA-224, SHA-384, SHA-512, названия которых содержат двоичную длину SHA-2.
+	\item HMAC - Hash-based Message Authentication Code, использует алгоритм хеширования, принимает сообщение M и ключ K в качестве входных данных и генерирует дайджест сообщения фиксированной длины в качестве выходных данных.
+\end{enumerate}
+
+Использование однократного хеширования потенциально небезопасно по нескольким причинам \cite{security}:
+\begin{itemize}
+	\item существование коллизий - при одинаковых паролях хеш-значения будут совпадать;
+	\item существование таблиц хэшей для различных функций.
+\end{itemize}
+
+Существует несколько способов увеличения надежности хеш-функций \cite{security}:
+\begin{enumerate}
+	\item использование "соли" - добавление символьной последовательности в конец строки;
+	\item использование нескольких этапов хеширования, использующих разные хеш-функции;
+	\item растяжение пароля - итеративный, или рекурсивный, алгоритм, который вычисляет хэш самого себя большое количество раз (на каждом этапе к значению добавляется новая "соль").
+\end{enumerate}
+
+В данной работе для обеспечения безопасности хранения данных используется хеш-функция SHA-512 и способ растяжения паролей.
+
+\subsection{Загрузка в базу данных}
+По завершении всех предыдущих этапов обработанные пароли пользователей заносятся в локальную реляционную базу данных.
 
 \section{Требования к программному обеспечению}
 На основе приведенного алгоритма можно выдвинуть требования к разрабатываемому ПО:
 \begin{itemize}
 %	\item входные данные - размер матрицы (целое число), её элементы (вещественные числа, по желанию пользователя, в противном случае - генерация произвольной матрицы заданного размера);
-	\item выходные данные - время работы последовательного выполнения действий, время работы конвейера, минимальное, среднее, максимальное времена ожидания заявки в очереди каждой из конвейерных лент - вещественные числа;
+   	\item выходные данные - время работы последовательного выполнения действий (вещественное число);
+	\item время работы конвейера (вещественное число);
+	\item минимальное, среднее, максимальное времена ожидания заявки в очереди каждой из конвейерных лент (вещественные числа);
 	\item наличие обработки некорректного ввода.
 \end{itemize}
 
 \section{Вывод}
-Был рассмотрен алгоритм нахождения определителя квадратной матрицы размера $n \times n$, он независимо вычисляет слагаемые
-для нахождения итогового определителя, что дает возможность для реализации параллельного варианта алгоритма. Выдвинуты требования к разрабатываемому ПО: работа с квадратными матрицами произвольного размера (целое число) с возможностью ввода элементов вещественного типа пользователем или генерацией матрицы заданного размера, на выходе - вещественное число, соответствующее вычисленному определителю матрицы, обработка некорректного ввода.
+ Был рассмотрен алгоритм шифрования пароля пользователя и его сохранение в базу данных.
+Были рассмотрены шаги алгоритма шифрования, выполняемые каждой лентой конвейера для оптимизации работы алгоритма.
+Выдвинуты требования к разрабатываемому ПО: выходные данные (включающие в себя время работы конвейера, минимальное, среднее, а также максимальное время ожидания заявки в очереди) и наличие обработки некорректного ввода.
+
 \newpage
 
 \chapter{Конструкторская часть}
@@ -87,67 +123,91 @@
 \section{Схемы алгоритмов}
 В данном пункте раздела представлены схемы реализуемых в работе алгоритмов.
 
-На рисунке~\ref{img:count_det} представлена схема организации конвейерных вычислений на примере конвейера с тремя лентами.
+На рисунке~\ref{img:conveer} представлена схема организации конвейерных вычислений на примере конвейера с тремя лентами.
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=1.00\linewidth]{images/count_det}
+	\includegraphics[width=1.00\linewidth]{images/conveer}
 	\caption{Схема организации конвейера с тремя лентами}
-	\label{img:count_det}
+	\label{img:conveer}
 \end{figure}
-
-На рисунке~\ref{img:thread_schema} представлена схема последовательного алгоритма шифрования и сохранения паролей.
-
-\begin{figure}[H]
-	\centering
-	\includegraphics[width=0.85\linewidth]{images/thread_schema}
-	\caption{Схема последовательного алгоритма}
-	\label{img:thread_schema}
-\end{figure}
-
-На рисунках~\ref{img:solver_1} -~\ref{img:solver_2} представлена схема реализация алгоритма шифрования на конвейере с тремя лентами.
-
-\begin{figure}[H]
-	\centering
-	\includegraphics[width=0.85\linewidth]{images/solver_part_1}
-	\caption{Схема алгоритма работы конвейерной обработки}
-	\label{img:solver_1}
-\end{figure}
-
+%
+%На рисунке~\ref{img:thread_schema} представлена схема последовательного алгоритма шифрования и сохранения паролей.
+%
+%\begin{figure}[H]
+%	\centering
+%	\includegraphics[width=0.85\linewidth]{images/thread_schema}
+%	\caption{Схема последовательного алгоритма}
+%	\label{img:thread_schema}
+%\end{figure}
+%
+%На рисунках~\ref{img:solver_1} -~\ref{img:solver_2} представлена схема реализация алгоритма шифрования на конвейере с тремя лентами.
+%
+%\begin{figure}[H]
+%	\centering
+%	\includegraphics[width=0.85\linewidth]{images/solver_part_1}
+%	\caption{Схема алгоритма работы конвейерной обработки}
+%	\label{img:solver_1}
+%\end{figure}
+%
 \section{Структуры данных}
 Для удобства работы были выделены следующие классы:
 \begin{itemize}
-	\item UserStats со следующими полями:
+	\item UserStats
 	\begin{itemize}
-		\item login - строка, логин пользователя
+		\item поля
+		\begin{itemize}
+			\item times - массив из объектов класса Times, содержащий время поступления и выхода для каждой ленты конвейера;
+			\item user - объект класса User, содержащий данные пользователя;
+			\item current - хэш-значение пароля;
+			\item number - идентификатор объекта класса;
+		\end{itemize}
+		\item методы
+		\begin{itemize}
+			\item set\_time - установка времени входа/выхода для конкретной ленты;
+			\item get\_time - получение времени входа/выхода для конкретной ленты;
+		\end{itemize}
 	\end{itemize}
-	\item mul - множитель минора (целое число, 1 для четных столбцов, -1 для нечетных с учетом начала нумерации с нуля);
-	\item size - размер матрицы (целое число).
+	\item User
+	\begin{itemize}
+		\item поля
+		\begin{itemize}
+			\item login - логин пользователя;
+			\item password - пароль пользователя;
+		\end{itemize}
+		\item методы
+		\begin{itemize}
+			\item generate\_pass - генерирует случайный пароль;
+		\end{itemize}
+	\end{itemize}
+	\item Time
+	\begin{itemize}
+		\item поля
+		\begin{itemize}
+			\item time\_in - время поступления на ленту ковейера;
+			\item time\_out - время выхода с ленты конвейера;
+		\end{itemize}
+		\item методы
+		\begin{itemize}
+			\item set - установка времени поступления/выхода;
+			\item get - получение времени поступления/выхода;
+		\end{itemize}
+	\end{itemize}
 \end{itemize}
 
-Для возможности генерации матриц, заполненных случайными элементами, класс Matrix содержит метод randomize.
+Таким образом, программа генерирует заданное в программе количество пользователей и их данных, затем формирует 4 очереди и 3 ленты конвейера и запускает конвейерную обработку. После окончания выводится время конвейерной и последовательной обработки одних и тех же данных, после выводится лог, содержащий время поступления в очередь и выхода задач для каждой ленты конвейера.
 
-Для управления потоками выделен класс Dispatcher со следующими полями:
-\begin{itemize}
-	\item m - матрица вещественных чисел, определитель которой необходимо вычислить;
-	\item size - размер матрицы (целое число);
-	\item threadCount - количество создаваемых потоков;
-	\item returnList - список, разделяемый потоками, содержащий промежуточные вычисления определителей.
-\end{itemize}
-
-Таким образом, программа получает входные данные от пользователя (размер матрицы и её элементы), затем запускает вычисление определителя для разного количества потоков, чтобы сравнить время и корректность вычислений. Для деления на потоки исходная матрица, как и требуемое количество потоков, передается в конструктор класса Dispatcher и затем для каждого количества потоков вызывается метод dispatch, где происходит выделение "подматриц" потокам и запуск вычислительного процесса. Функция рабочего потока выполняет рекурсивное вычисление определителя для каждой переданной ему матрицы после чего вычисленное значение помещает в общий список, сумма которого вычисляется в главном потоке по завершении работы всех дочерних и возвращается как итоговый результат.
-
-\section{Классы эквивалентности}
-Для осуществления функционального тестирования ПО были выделены следующие классы эквивалентности:
-\begin{itemize}
-	\item матрица, состоящая из одного элемента;
-	\item нулевая матрица;
-	\item единичная матрица;
-	\item произвольная матрица, определитель которой равен нулю;
-	\item произвольная матрица, определитель которой не равен нулю.
-\end{itemize}
+%\section{Классы эквивалентности}
+%Для осуществления функционального тестирования ПО были выделены следующие классы эквивалентности:
+%\begin{itemize}
+%	\item матрица, состоящая из одного элемента;
+%	\item нулевая матрица;
+%	\item единичная матрица;
+%	\item произвольная матрица, определитель которой равен нулю;
+%	\item произвольная матрица, определитель которой не равен нулю.
+%\end{itemize}
 
 \section{Вывод}
-В данном разделе на основе приведенных в аналитическом разделе теоретических данных были составлены схемы алгоритмов для реализации в технологической части, в том числе, разделение вычисления определителя на потоки, выделены структуры данных и классы эквивалентности для дальнейшего тестирования программного обеспечения. 
+В данном разделе приведена схема работы конвейера, выделены структуры данных для дальнейшей реализации программного обеспечения. 
 
 \chapter{Технологическая часть}
 Данный раздел содержит обоснование выбора языка и среды разработки, реализацию алгоритмов.
@@ -161,162 +221,304 @@
 \end{itemize}
 
 \section{Реализация алгоритмов}
-В листингах \ref{lst:det_rec} - \ref{lst:work_thread} представлены реализации рассматриваемых алгоритмов.
-%\newpage
+В листингах \ref{lst:user} - \ref{lst:master} представлены реализации рассматриваемых алгоритмов.
+\newpage
 \captionsetup{singlelinecheck=false, justification=raggedright}
-\begin{lstlisting}[caption=Рекурсивный алгоритм вычисления определителя матрицы, label={lst:det_rec}]
-def calculateDet(m: Matrix):
-	s = 0                                                   
-	if m.size == 1:                                         
-		s = m.matrix[0][0] * m.mult                         
-	else:                                                   
-		for i in range(m.size):                             
-			mul = m.matrix[0][i] * m.mult
-			if i % 2 == 1:               
-				mul *= -1                    
-			size = m.size - 1            
-			new_mat = Matrix(size, mul)  
-			for j in range(1, m.size):   
-				cnt = 0                      
-				for k in range(m.size):      
-					if k != i:                   
-						new_mat.matrix[j - 1][cnt] = m.matrix[j][k] 
-						cnt += 1                                    
-			s += calculateDet(new_mat)                  
-	return s      
-\end{lstlisting}
+\begin{lstlisting}[caption=Класс User, label={lst:user}]
+PC = 'qwertyuiopasdfghjklzxcvbnm1234567890'
+PCS = len(PC)
 
-\begin{lstlisting}[caption=Поток-диспетчер (часть 1)]
-class Dispatcher:
-	def __init__(self, size: int = 0, matrix: Matrix = None):
-		self.m = matrix
-		if size == 0: 
-			size = 9
-		if self.m is None:
-			self.m = Matrix(size).randomize()
-		self.threadCount = 1
-		self.threadManager = Manager()
-		self.returnList = self.threadManager.list()
-	
-	def dispatch(self):
-		activeThreads = []
-		matrixPerThread = self.m.size / self.threadCount
-		allMatrixes = []
-		for i in range(self.m.size):
-			mul = self.m.matrix[0][i] * self.m.mult
-			if i % 2 == 1:
-				mul *= -1
-			size = self.m.size - 1
-			matrix = []
-			for j in range(1, self.m.size):
-				matrix.append([])
-				for k in range(self.m.size):
-					if k != i:
-						matrix[-1].append(self.m.matrix[j][k])
-			allMatrixes.append(Matrix(size, mul, matrix))
-		startIndex = 0
-		threadTasksCount = []
-		for i in range(self.threadCount):
-			endIndex = round(matrixPerThread * (i + 1))
-			if i == self.threadCount - 1:  # last thread
-				threadMatrixes = allMatrixes[startIndex:]
+class User:
+	def __init__(self, login: str = None, password: str = None):
+		if login is None:
+			self.__login = str(uuid.uuid4())
+		else:
+			self.__login = login
+		if password is None:
+			self.__password = self.__generate_pass()
+		else:
+			self.__password = password
+
+	@staticmethod
+	def __generate_pass():
+		size = random.randint(16, 2**9)
+		a = ''
+		for i in range(size):
+			a += PC[random.randint(0, PCS - 1)]
+		return a
+
+	@property
+	def login(self):
+		return self.__login
+		
+	@property
+	def password(self):
+		return self.__password
+\end{lstlisting}
+\newpage
+\begin{lstlisting}[caption=Класс Time]
+class Time:
+	def __init__(self):
+		self.__time_in = None
+		self.__time_out = None
+
+	def set(self, t, is_in: bool):
+		if is_in:
+			if self.__time_in is not None:
+				raise Exception("Время поступления на ленту уже записано!")
+			self.__time_in = t
+		elif not is_in:
+			if self.__time_out is not None:
+				raise Exception("Время выхода с ленты уже записано!")
+			self.__time_out = t
+		else:
+			raise Exception("При установке параметр is_in - обязательный!")
+
+	def get(self, is_in: bool = None):
+		if is_in is None:
+			if self.__time_out is None and self.__time_in is None:
+				raise Exception("Время не установлено!")
+			elif self.__time_out is None:
+				raise Exception("Время поступления на ленту не установлено!")
+			elif self.__time_out is None:
+				raise Exception("Время выхода с ленты не установлено!")
+			return [self.__time_in, self.__time_out]
+		elif is_in:
+			if self.__time_out is None:
+				raise Exception("Время поступления на ленту не установлено!")
+				return self.__time_in
+		else:
+			if self.__time_out is None:
+				raise Exception("Время выхода с ленты не установлено!")
+			return self.__time_out
+\end{lstlisting}
+\newpage
+\begin{lstlisting}[caption=Класс UserStats]
+class UserStats:
+	cnt = 0
+
+	def __init__(self, login: str = None, password: str = None, 	do_not_init: bool = True):
+		self.__times = [Time() for _ in range(3)]
+		self.__number = self.cnt
+		if do_not_init:
+			self.user = None
+		else:
+			self.user = User(login, password)
+		self.current = ''
+		UserStats.cnt += 1
+
+	def set_time(self, time_, stage: int, is_in: bool):
+		# is_in - True, если на вход, False, если на выход
+		# stage - номер ленты
+		if stage < 0 or stage > 2 or stage is None:
+			raise Exception("Неправильный номер ленты!")
+		self.__times[stage].set(time_, is_in)
+
+	def get_time(self, is_in: bool = None, stage: int = None):
+		# is_in - True, если на вход, False, если на выход, обязательный
+		# stage - номер ленты, None = выдать все
+
+		if stage is not None and (stage < 0 or stage > 2):
+			raise Exception("Неправильный номер ленты!")
+		if stage is None:
+			if is_in is None:
+				return [self.__times[i].get() for i in range(3)]
 			else:
-				threadMatrixes = allMatrixes[startIndex:endIndex]
-			startIndex = endIndex
-			activeThreads.append(
-			Process(target=calculateDetThreading, args=(threadMatrixes, self.returnList)))
-			threadTasksCount.append(len(threadMatrixes))
-\end{lstlisting}
-\begin{lstlisting}[caption=Поток-диспетчер (часть 2)]
-		for thread in activeThreads:
-			thread.start()
-		for thread in activeThreads:
-			thread.join()
-		result = sum(self.returnList)
-		self.returnList = self.threadManager.list()
-		return result
-\end{lstlisting}
-%\newpage
-\begin{lstlisting}[caption=Рабочий поток, label={lst:work_thread}]
-def calculateDetThreading(matrixes, returnList: list):
-	s = 0
-	for m in matrixes:
-		s += calculateDet(m)
-	returnList.append(s)
-\end{lstlisting}
+				return [self.__times[i].get(is_in) for i in range(3)]
+		else:
+			return self.__times[stage].get(is_in)
 
-\section{Тестирование}
-В таблице \ref{tab:tests} представлены использованные для тестирования методом "черного ящика" данные, были рассмотрены все возможные тестовые случаи. Все тесты пройдены успешно.
+	def get_number(self):
+		return self.__number
+\end{lstlisting}
+\newpage
+\begin{lstlisting}[caption=Файл master.py (часть 1)]
+def init_db(con: sqlite3.Connection):
+	cur = con.cursor()
+	cur.execute('create table if not exists users_out (login text, password text)')
+	cur.execute('create table if not exists users_in (i int, login text, password text)')
+	con.commit()
 
-\begin{table}[H]
-	\begin{center}
-		\captionsetup{justification=raggedleft, singlelinecheck=false}
-		\caption[]{\label{tab:tests} Проведенные тесты}
+def fill_input_db(con: sqlite3.Connection, count=30):
+	cur = con.cursor()
+	for index in range(count):
+		m = User()
+		cur.execute(f'insert into users_in (i, login, password) values ({index}, "{m.login()}", "{m.password()}")')
+	con.commit()
 
-	\begin{tabular}{|c|c|}
-		\hline
-		\rule[-1ex]{0pt}{2.5ex} Матрица & Определитель \\
-		\hline
-		\rule[-1ex]{0pt}{2.5ex} $\begin{pmatrix}
-		9
-		\end{pmatrix}$ & 9
-		\\
-		\hline
-		\rule[-1ex]{0pt}{2.5ex} $\begin{pmatrix}
-			0 & 0 \\
-			0 & 0
-		\end{pmatrix}$ & 0
-		\\
-		\hline
-		\rule[-1ex]{0pt}{2.5ex} $\begin{pmatrix}
-			1 & 0 & 0 \\
-			0 & 1 & 0 \\
-			0 & 0 & 1
-		\end{pmatrix}$ & 1
-		 \\
-		\hline
-		\rule[-1ex]{0pt}{2.5ex}	$\begin{pmatrix}
-			1 & 2 & 3 \\
-			4 & 5 & 6 \\
-			7 & 8 & 12
-		\end{pmatrix}$ & -9
-		\\
-		\hline
-		\rule[-1ex]{0pt}{2.5ex} $\begin{pmatrix}
-			1 & 2 & 3 & 4 \\
-			5 & 6 & 7 & 8 \\
-			9 & 10 & 11 & 12 \\
-			13 & 14 & 15 & 16
-		\end{pmatrix}$ & 0
-		 \\
-		 \hline
-	\end{tabular}
-\end{center}
-\end{table}
+def get_list_size_from_db(con: sqlite3.Connection) -> int:
+	cur = con.cursor()
+	cur.execute('select count(*) from users_in')
+	return cur.fetchone()[0]
+
+def clear_db(con: sqlite3.Connection):
+	cur = con.cursor()
+	cur.execute('drop table if exists users_out')
+	cur.execute('drop table if exists users_in')
+	con.commit()
+
+def generate_users(users_count: int) -> [UserStats]:
+	users = []
+
+	for i in range(users_count):
+		users.append(UserStats(do_not_init=False))
+
+	return users
+\end{lstlisting}
+\newpage
+\begin{lstlisting}[caption=Файл master.py (часть 2)]
+def load_user(u: UserStats):
+	con = sqlite3.connect('app.db')
+	c = con.cursor()
+	c.execute(f'select login, password from users_in where i = {u.get_number()}')
+	login, password = c.fetchone()
+	u.user = User(login, password)
+
+def get_hashed(u: UserStats):
+	u.current = u.user.login() + 'my secret key'
+
+	for iter in range(2000):
+	u.current = sha512((u.current + str(iter)).encode('Utf-8')).hexdigest()
+
+def insert(u: UserStats):
+	con = sqlite3.connect('app.db')
+	c = con.cursor()
+	c.execute(f"insert into users_out (login, password) values ('{u.user.login()}', '{u.current}')")
+	con.commit()
+	con.close()
+
+def tex_table(stats, stages):
+	print("\\hline")
+	print('Stage N & Task M & Start Time & End Time\\\\')
+	print("\\hline")
+
+	for stat_num, stat in enumerate(stats):
+		for stage in range(stages):
+			times = stat.get_time(stage=stage)
+			print(
+				f'Stage: {stage + 1} & Task: {stat_num + 1} & {times[0] - start_time:.6f} & {times[1] - start_time:.6f} \\\\')
+
+		print("\\hline")
+\end{lstlisting}
+\newpage
+\begin{lstlisting}[caption=Файл master.py (часть 3)]
+def job(task: Callable, in_queue: SimpleQueue, out_queue: SimpleQueue, stage: int):
+	while True:
+		data: UserStats = in_queue.get()
+
+		if data is None:
+			out_queue.put(data)
+			break
+
+		data.set_time(time.time(), stage, True)
+		task(data)
+		data.set_time(time.time(), stage, False)
+		out_queue.put(data)
+
+def test_serial(users):
+	for user in users:
+		load_user(user)
+		get_hashed(user)
+		insert(user)
+
+if __name__ == '__main__':
+	stages_count = 3
+
+	connection = sqlite3.connect('app.db')
+	clear_db(connection)
+	init_db(connection)
+	fill_input_db(connection)
+
+	_users = generate_users(get_list_size_from_db(connection))
+
+	pipeline_time = 0
+	serial_time = 0
+	cnt = 10
+	for i in range(cnt):
+		clear_db(connection)
+		init_db(connection)
+		fill_input_db(connection)
+
+		passwords_queue = SimpleQueue()
+		salt_queue = SimpleQueue()
+\end{lstlisting}
+\begin{lstlisting}[caption=Файл master.py (часть 4)]
+		hash_queue = SimpleQueue()
+		result_queue = SimpleQueue()
+
+		add_salter = Process(target=job, args=(load_user, passwords_queue, salt_queue, 0))
+		hasher = Process(target=job, args=(get_hashed, salt_queue, hash_queue, 1))
+		inserter = Process(target=job, args=(insert, hash_queue, result_queue, 2))
+		pipeline = [add_salter, hasher, inserter]
+
+		for u in _users:
+			passwords_queue.put(u)
+
+		passwords_queue.put(None)
+		start_time = time.time()
+		for worker in pipeline:
+			worker.start()
+
+		for worker in pipeline:
+			worker.join()
+		end_time = time.time()
+		pipeline_time += end_time - start_time
+
+		start_time_ = time.time()
+		test_serial(_users)
+		end_time_ = time.time()
+		serial_time += end_time_ - start_time_
+
+	pipeline_time /= cnt
+
+	print(f'Pipeline time = {pipeline_time * 1e6} mks')
+
+	serial_time /= cnt
+	print(f'Serial time = {serial_time * 1e6} mks')
+	print('Press to get log')
+	input()
+
+	stats = []
+\end{lstlisting}
+\newpage
+\begin{lstlisting}[caption=Файл master.py (часть 5)]
+	while not result_queue.empty():
+		stats.append(result_queue.get())
+	stats.pop()
+
+	deltas = [[], [], []]
+	for stat in stats:
+		for stage in range(stages_count):
+			stage_stat = stat.get_time(stage=stage)
+			deltas[stage].append(stage_stat[1] - stage_stat[0])
+
+	for stage in range(stages_count):
+		print(f'Max time on stage {stage + 1} = {max(deltas[stage]) * 1e6} mks')
+		print(f'Min time on stage {stage + 1} = {min(deltas[stage]) * 1e6} mks')
+		print(f'Avg time on stage {stage + 1} = {sum(deltas[stage]) / len(deltas[stage]) * 1e6} mks\n')
+
+	connection.close()
+
+	tex_table(stats, stages_count)
+\end{lstlisting}
+%
+
 \section{Выводы}
-В данном разделе были реализованы и протестированы алгоритмы рекурсивного вычисления определителя и вычисления определителя с использованием многопоточности.
+В данном разделе была реализована конвейерная обработка данных: изменение, хеширование и сохранение паролей пользователей.
 \newpage
 
 \chapter{Экспериментальная часть}
 В данном разделе сравниваются реализованные алгоритмы, дается сравнительная оценка затрат на время.
 
 \section{Пример работы программы}
-Пример работы программы представлен на рисунках \ref{fig:input_mat_ex} - \ref{fig:gener_ex}.
+Пример работы программы представлен на рисунке \ref{fig:ex}.
 \captionsetup{singlelinecheck=true}
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=1\linewidth]{images/input_mat_ex}
-	\caption{Пример работы программы для вводимой матрицы}
-	\label{fig:input_mat_ex}
+	\includegraphics[width=0.62\linewidth]{images/example}
+	\caption{Пример работы программы}
+	\label{fig:ex}
 \end{figure}
-
-\begin{figure}[H]
-	\centering
-	\includegraphics[width=1\linewidth]{images/generate_ex}
-	\caption{Пример работы программы для вводимой матрицы}
-	\label{fig:gener_ex}
-\end{figure}
-
 
 \section{Технические характеристики}
 Технические характеристики устройства, на котором выполнялось исследование:
@@ -331,34 +533,32 @@ def calculateDetThreading(matrixes, returnList: list):
 \end{itemize}
 
 \section{Время выполнения алгоритмов}
-Время выполнения алгоритмов измерялось на автоматически генерируемых квадратных матрицах необходимого размера (элементы которых - вещественные числа в диапазоне [-1000, 1000]) с использованием функции time библиотеки time. Усредненные результаты 10 замеров реального времени работы приведены в таблице ниже.
+Время выполнения алгоритмов измерялось на автоматически генерируемых в необходимом количестве пользовательских данных с использованием функции time библиотеки time. Усредненные результаты 10 замеров реального времени работы приведены в таблице ниже.
 
-На рисунке \ref{fig:graph} представлена зависимость времени вычисления определителя матриц от размеров на основе таблицы \ref{tab:time}. Для матриц, размерность которых меньше 6, вычисление с использованием потоков занимает минимум в 1.3 раз (с увеличением коэффициента при увеличении количества потоков) больше времени в связи с превышением затратами на создание потоков затрат на последовательное вычисление определителя. Однако с увеличением размеров матрицы становится заметным преимущество использования параллельных вычислений. Таким образом, использование двух потоков дает выигрыш от 1.2 до 1.7 раз (для матриц, больших $6\times6$), четырех - от 1.2 до 2.8 раз (для матриц, больших $6\times6$), восьми - от 1.6 до 3.5 раз (матрицы от $7\times7$), шестнадцати - от 2.7 до 4.4 раз, для двадцати четырех - от 2.3 до 4.28 раз (матрицы от $8\times8$). Таким образом, с увеличением размерности матрицы, выигрыш от использования потоков увеличивается, при этом набольшим приростом, несмотря на получение преимуществ для матриц больших, чем те, на которых начинает выигрывать использование двух потоков ($6\times6$), обладает использование шестнадцати потоков, причем с ростом размерности матрицы выигрыш увеличивается соразмерно количеству потоков. Исключением является использование 24 потоков, который уступает в эффективности 16-и потокам из-за увеличения затрат на содержание потоков и управления ими.
+На рисунке \ref{fig:graph} представлена зависимость времени выполнения алгоритма в зависимости от "плана на день" - количества пользователей для обработки - на основе таблицы \ref{tab:time}. Последовательное выполнение занимает в среднем в 1.5-1.7 раз больше времени, чем конвейерное с незначительным увеличением выигрыша обработки на конвейере при увеличении количества пользователей. Таким образом, выигрыш от использования конвейерной обработки при количестве пользователей от 15 до 85 приблизительно одинаков и составляет около 1.6 раз.
 \begin{table}[H]
 	\begin{center}
 		\captionsetup{justification=raggedleft, singlelinecheck=false}
-		\caption{\label{tab:time} Время вычисления определителя матриц разных размеров в миллисекундах}
-		\begin{tabular}{|c c c c c c c|} 
+		\caption{\label{tab:time} Время выполнения алгоритма для разного количества пользователей в микросекундах}
+		\begin{tabular}{|c| c | c|} 
 			\hline
-			Размер&1 поток&2 потока&4 потока&8 потоков&16 потоков&24 потока\\ [0.5ex]
+			Размер&Последовательное выполнение&Конвейерная обработка\\ [0.5ex]
 			\hline
-	   		   4 &   12 &   14 &   16 &   22 &   36 &   51
-	   		\\ 
+	   		   5 &   38291.287 &  36348.152\\ 
 	   		\hline
-	   		5 &   14 &   15 &   16 &   23 &   37 &   51
-	   		\\ 
+	   		15 &   109756.374 &   73250.5798 \\ 
 	   		\hline
-	   		6 &   22 &   18 &   19 &   23 &   37 &   50
-	   		\\ 
+	   		25 &   181147.265 &   113172.388 \\ 
 	   		\hline
-	   		7 &   50 &   33 &   29 &   31 &   46 &   58
-	   		\\ 
+	   		35 &   252654.957 &   152421.474 \\ 
 	   		\hline
-	   		8 &  251 &  138 &   80 &   83 &   94 &  108
-	   		\\ 
+	   		45 &  322310.686 &  197659.373 \\ 
 	   		\hline
-	   		9 & 2102 & 1212 &  756 &  599 &  476 &  491
-	   		\\ 
+	   		55 & 399007.916 & 239235.663 \\ 
+	   		\hline
+	   		65 & 461043.334 & 286625.170 \\ 
+	   		\hline
+	   		75 & 541337.20 & 321961.14 \\ 
 	   		\hline
 		\end{tabular}
 	\end{center}
@@ -366,21 +566,73 @@ def calculateDetThreading(matrixes, returnList: list):
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.9\linewidth]{images/graph}
-	\caption{Зависимость времени работы алгоритмов от размера квадратной матрицы}
+	\includegraphics[width=0.9\linewidth]{images/con_vs_serial}
+	\caption{Зависимость времени выполнения от количества пользователей}
 	\label{fig:graph}
 \end{figure}
 
+\section{Тестирование}
+Для тестирования корректности работы ПО используется анализ логов. Полученная для последних 6 заявок таблица приведена ниже. На рисунке \ref{fig:maxmintime} представлены данные о максимальном, минимальном и среднем времени обработки заявок на каждой ленте конвейера.
+%
+\begin{table}[H]
+	\begin{center}
+		\captionsetup{justification=raggedleft, singlelinecheck=false}
+		\caption[]{\label{tab:tests} Полученный лог}
+		%
+		\begin{tabular}{|c|c|c|c|}
+			\hline
+			Stage N & Task M & Start Time & End Time\\
+			\hline
+			Stage: 1 & Task: 24 & 0.012759 & 0.012983 \\
+			Stage: 2 & Task: 24 & 0.096859 & 0.100533 \\
+			Stage: 3 & Task: 24 & 0.100766 & 0.103546 \\
+			\hline
+			Stage: 1 & Task: 25 & 0.013081 & 0.013289 \\
+			Stage: 2 & Task: 25 & 0.100624 & 0.104318 \\
+			Stage: 3 & Task: 25 & 0.104567 & 0.107468 \\
+			\hline
+			Stage: 1 & Task: 26 & 0.013381 & 0.013590 \\
+			Stage: 2 & Task: 26 & 0.104418 & 0.108121 \\
+			Stage: 3 & Task: 26 & 0.108363 & 0.111242 \\
+			\hline
+			Stage: 1 & Task: 27 & 0.013669 & 0.017236 \\
+			Stage: 2 & Task: 27 & 0.108238 & 0.111867 \\
+			Stage: 3 & Task: 27 & 0.112061 & 0.114830 \\
+			\hline
+			Stage: 1 & Task: 28 & 0.017447 & 0.017701 \\
+			Stage: 2 & Task: 28 & 0.111984 & 0.115609 \\
+			Stage: 3 & Task: 28 & 0.115740 & 0.118498 \\
+			\hline
+			Stage: 1 & Task: 29 & 0.017766 & 0.017931 \\
+			Stage: 2 & Task: 29 & 0.115671 & 0.119328 \\
+			Stage: 3 & Task: 29 & 0.119419 & 0.122284 \\
+			\hline
+			Stage: 1 & Task: 30 & 0.017987 & 0.018134 \\
+			Stage: 2 & Task: 30 & 0.119397 & 0.123048 \\
+			Stage: 3 & Task: 30 & 0.123159 & 0.126240 \\
+			\hline
+		\end{tabular}
+	\end{center}
+\end{table}
+\captionsetup{singlelinecheck=true}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.65\linewidth]{images/maxmintime}
+	\caption{Время выполнения заявок на каждой из лент конвейера}
+	\label{fig:maxmintime}
+\end{figure}
+
+
 \section{Выводы}
-В данном разделе были проведены измерения времени, затрачиваемого на вычисление определителя матрицы с использованием параллельных вычислений и без них.
-На матрицах, размер которых не превышает 5, параллельные версии алгоритма оказались неэффективны. С увеличением размеров увеличивается эффективность использования параллельных вычислений, причем чем больше количество процессов, тем позже появляется выигрыш, но тем более существенным он оказывается. Исключением является использование 24 потоков в связи с большими затратами на обслуживание потоков в ядрах по сравнению с меньшим количеством потоков. Таким образом, выигрыш для 4 и 8 потоков проявляется на матрицах, больших $6\times6$ и составляет от 1.2 до 1.7 раз и от 1.2 до 2.8 раз соответственно, для восьми потоков - на матрицах, больших $7\times7$, от 1.5 до 3.5 раз, для 16 и 24 потоков - на матрицах, больших $8\times8$, от  2.7 до 4.4 раз и от 2.3 до 4.28 раз соответственно.
+В данном разделе были проведены измерения времени, затрачиваемого на загрузку данных о пользователе из базы данных, хеширование пароля и сохранения в базу данных полученного хэша.
+Для размера входной очереди конвейера, принадлежащего интервалу [5, 85], выигрыш по сравнению с последовательной обработкой составил приблизительно 1.5-1.7 раз с небольшими колебаниями при увеличении количества пользователей.
 \newpage
 
 \addcontentsline{toc}{chapter}{Заключение}
 \chapter*{Заключение}
-В процессе выполнения лабораторной работы были изучены и реализованы алгоритмы последовательного и параллельного вычисления определителя квадратной матрицы.
+В процессе выполнения лабораторной работы было реализовано асинхронное взаимодействие потоков на примере конвейерной обработки данных. В качестве конвейера рассмотрена работа с логинами и паролями пользователей: загрузка из базы данных, многократное хеширование хеш-функцией SHA-512 с добавлением "солей" и сохранение полученных данных в базу данных.
 
-Было исследовано время выполнения выше обозначенных алгоритмов. В результате было выявлено, что на матрицах, размер которых не превышает 5, использование параллельных вычислений нецелесообразно из-за превышения затратами на содержание потоков затрат на последовательное вычисление определителя. С увеличением размеров увеличивается эффективность использования параллельных вычислений, причем чем больше количество процессов, тем позже появляется выигрыш, но тем более существенным он оказывается. Исключением является использование 24 потоков в связи с увеличением затрат на обслуживание потоков в ядрах по сравнению с 16 потоками. Таким образом, выигрыш для 4 и 8 потоков проявляется на матрицах, больших $6\times6$ и составляет от 1.2 до 1.7 раз и от 1.2 до 2.8 раз соответственно, для восьми потоков - на матрицах, больших $7\times7$, от 1.5 до 3.5 раз, для 16 и 24 потоков - на матрицах, больших $8\times8$, от  2.7 до 4.4 раз и от 2.3 до 4.28 раз соответственно. Наиболее эффективным для матриц, больших $8\times8$, является использование 16 потоков, для матриц $7\times7$ - 8 потоков, $6\times6$ - четырех.
+Было исследовано время выполнения выше обозначенного алгоритма. В результате было выявлено, что в среднем для количества пользователей от 5 до 85 выигрыш от использования конвейерной обработки составляет 1.6 раз с небольшим увеличением при увеличении количества пользователей.
 
 \newpage
 \addcontentsline{toc}{chapter}{Список литературы}
