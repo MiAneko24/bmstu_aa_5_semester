@@ -1,0 +1,307 @@
+\documentclass[../report.tex]{subfiles}
+
+\begin{document}
+Данный раздел содержит обоснование выбора языка программирования и среды разработки, а также программную реализацию сконструированных алгоритмов.
+
+\section{Средства реализации}
+Для реализации программы был выбран язык программирования Python~\cite{python}. Такой выбор обусловлен следующими причинами:
+\begin{itemize}
+	\item имеются стандартные библиотеки для работы с потоками, хеширования и измерения времени,
+	\item высокая скорость разработки.
+\end{itemize}
+
+В качестве функции для шифрования будет использоваться криптографический хеш SHA-512. На момент написания работы это хеш без коллизий.
+
+\section{Реализация алгоритмов}
+В листингах \ref{lst:user} - \ref{lst:master} представлены реализации рассматриваемых алгоритмов.
+\newpage
+
+\begin{lstlisting}[caption=Класс User, label={lst:user}]
+	PC = 'qwertyuiopasdfghjklzxcvbnm1234567890'
+	PCS = len(PC)
+	
+	class User:
+	def __init__(self, login: str = None, password: str = None):
+	if login is None:
+	self.__login = str(uuid.uuid4())
+	else:
+	self.__login = login
+	if password is None:
+	self.__password = self.__generate_pass()
+	else:
+	self.__password = password
+	
+	@staticmethod
+	def __generate_pass():
+	size = random.randint(16, 2**9)
+	a = ''
+	for i in range(size):
+	a += PC[random.randint(0, PCS - 1)]
+	return a
+	
+	@property
+	def login(self):
+	return self.__login
+	
+	@property
+	def password(self):
+	return self.__password
+\end{lstlisting}
+
+\newpage
+\begin{lstlisting}[caption=Класс Time]
+	class Time:
+	def __init__(self):
+	self.__time_in = None
+	self.__time_out = None
+	
+	def set(self, t, is_in: bool):
+	if is_in:
+	if self.__time_in is not None:
+	raise Exception("InTime already recorded!")
+	self.__time_in = t
+	elif not is_in:
+	if self.__time_out is not None:
+	raise Exception("OutTime already recorded!")
+	self.__time_out = t
+	else:
+	raise Exception("is_in needed!")
+	
+	def get(self, is_in: bool = None):
+	if is_in is None:
+	if self.__time_out is None and self.__time_in is None:
+	raise Exception("Time's not set!")
+	elif self.__time_out is None:
+	raise Exception("Can't get out_time!")
+	elif self.__time_out is None:
+	raise Exception("Can't get out_time!")
+	return [self.__time_in, self.__time_out]
+	elif is_in:
+	if self.__time_out is None:
+	raise Exception("Can't get in_time!")
+	return self.__time_in
+	else:
+	if self.__time_out is None:
+	raise Exception("Can't get out_time!")
+	return self.__time_out
+\end{lstlisting}
+
+\newpage
+\begin{lstlisting}[caption=Класс UserStats]
+	class UserStats:
+	cnt = 0
+	
+	def __init__(self, login: str = None, password: str = None, 	do_not_init: bool = True):
+	self.__times = [Time() for _ in range(3)]
+	self.__number = self.cnt
+	if do_not_init:
+	self.user = None
+	else:
+	self.user = User(login, password)
+	self.current = ''
+	UserStats.cnt += 1
+	
+	def set_time(self, time_, stage: int, is_in: bool):
+	# is_in - True, in, False, out
+	# stage - номер ленты
+	if stage < 0 or stage > 2 or stage is None:
+	raise Exception("Wrong num!")
+	self.__times[stage].set(time_, is_in)
+	
+	def get_time(self, is_in: bool = None, stage: int = None):
+	# is_in - True, False, out
+	# stage - num, None = all
+	
+	if stage is not None and (stage < 0 or stage > 2):
+	raise Exception("Wrong num!")
+	if stage is None:
+	if is_in is None:
+	return [self.__times[i].get() for i in range(3)]
+	else:
+	return [self.__times[i].get(is_in) for i in range(3)]
+	else:
+	return self.__times[stage].get(is_in)
+	
+	def get_number(self):
+	return self.__number
+\end{lstlisting}
+
+\newpage
+\begin{lstlisting}[caption=Файл master.py (часть 1)]
+	def init_db(con: sqlite3.Connection):
+	cur = con.cursor()
+	cur.execute('create table if not exists users_out (login text, password text)')
+	cur.execute('create table if not exists users_in (i int, login text, password text)')
+	con.commit()
+	
+	def fill_input_db(con: sqlite3.Connection, count=30):
+	cur = con.cursor()
+	for index in range(count):
+	m = User()
+	cur.execute(f'insert into users_in (i, login, password) values ({index}, "{m.login()}", "{m.password()}")')
+	con.commit()
+	
+	def get_list_size_from_db(con: sqlite3.Connection) -> int:
+	cur = con.cursor()
+	cur.execute('select count(*) from users_in')
+	return cur.fetchone()[0]
+	
+	def clear_db(con: sqlite3.Connection):
+	cur = con.cursor()
+	cur.execute('drop table if exists users_out')
+	cur.execute('drop table if exists users_in')
+	con.commit()
+	
+	def generate_users(users_count: int) -> [UserStats]:
+	users = []
+	
+	for i in range(users_count):
+	users.append(UserStats(do_not_init=False))
+	
+	return users
+\end{lstlisting}
+
+\newpage
+\begin{lstlisting}[caption=Файл master.py (часть 2)]
+	def load_user(u: UserStats):
+	con = sqlite3.connect('app.db')
+	c = con.cursor()
+	c.execute(f'select login, password from users_in where i = {u.get_number()}')
+	login, password = c.fetchone()
+	u.user = User(login, password)
+	
+	def get_hashed(u: UserStats):
+	u.current = u.user.login() + 'my secret key'
+	
+	for iter in range(2000):
+	u.current = sha512((u.current + str(iter)).encode('Utf-8')).hexdigest()
+	
+	def insert(u: UserStats):
+	con = sqlite3.connect('app.db')
+	c = con.cursor()
+	c.execute(f"insert into users_out (login, password) values ('{u.user.login()}', '{u.current}')")
+	con.commit()
+	con.close()
+	
+	def tex_table(stats, stages):
+	print("\\hline")
+	print('Stage N & Task M & Start Time & End Time\\\\')
+	print("\\hline")
+	
+	for stat_num, stat in enumerate(stats):
+	for stage in range(stages):
+	times = stat.get_time(stage=stage)
+	print(
+	f'Stage: {stage + 1} & Task: {stat_num + 1} & {times[0] - start_time:.6f} & {times[1] - start_time:.6f} \\\\')
+	
+	print("\\hline")
+\end{lstlisting}
+
+\newpage
+\begin{lstlisting}[caption=Файл master.py (часть 3)]
+	def job(task: Callable, in_queue: SimpleQueue, out_queue: SimpleQueue, stage: int):
+	while True:
+	data: UserStats = in_queue.get()
+	
+	if data is None:
+	out_queue.put(data)
+	break
+	
+	data.set_time(time.time(), stage, True)
+	task(data)
+	data.set_time(time.time(), stage, False)
+	out_queue.put(data)
+	
+	def test_serial(users):
+	for user in users:
+	load_user(user)
+	get_hashed(user)
+	insert(user)
+	
+	if __name__ == '__main__':
+	stages_count = 3
+	
+	connection = sqlite3.connect('app.db')
+	clear_db(connection)
+	init_db(connection)
+	fill_input_db(connection)
+	
+	_users = generate_users(get_list_size_from_db(connection))
+	
+	pipeline_time = 0
+	serial_time = 0
+	cnt = 10
+	for i in range(cnt):
+	clear_db(connection)
+	init_db(connection)
+	fill_input_db(connection)
+	
+	passwords_queue = SimpleQueue()
+	salt_queue = SimpleQueue()
+\end{lstlisting}
+
+\newpage
+\begin{lstlisting}[caption=Файл master.py (часть 4)]
+	hash_queue = SimpleQueue()
+	result_queue = SimpleQueue()
+	
+	add_salter = Process(target=job, args=(load_user, passwords_queue, salt_queue, 0))
+	hasher = Process(target=job, args=(get_hashed, salt_queue, hash_queue, 1))
+	inserter = Process(target=job, args=(insert, hash_queue, result_queue, 2))
+	pipeline = [add_salter, hasher, inserter]
+	
+	for u in _users:
+	passwords_queue.put(u)
+	
+	passwords_queue.put(None)
+	start_time = time.time()
+	for worker in pipeline:
+	worker.start()
+	
+	for worker in pipeline:
+	worker.join()
+	end_time = time.time()
+	pipeline_time += end_time - start_time
+	
+	start_time_ = time.time()
+	test_serial(_users)
+	end_time_ = time.time()
+	serial_time += end_time_ - start_time_
+	
+	pipeline_time /= cnt
+	
+	print(f'Pipeline time = {pipeline_time * 1e6} mks')
+	
+	serial_time /= cnt
+	print(f'Serial time = {serial_time * 1e6} mks')
+	print('Press to get log')
+	input()
+	
+	stats = []
+\end{lstlisting}
+\newpage
+\begin{lstlisting}[caption=Файл master.py (часть 5), label={lst:master}]
+	while not result_queue.empty():
+	stats.append(result_queue.get())
+	stats.pop()
+	
+	deltas = [[], [], []]
+	for stat in stats:
+	for stage in range(stages_count):
+	stage_stat = stat.get_time(stage=stage)
+	deltas[stage].append(stage_stat[1] - stage_stat[0])
+	
+	for stage in range(stages_count):
+	print(f'Max time on stage {stage + 1} = {max(deltas[stage]) * 1e6} mks')
+	print(f'Min time on stage {stage + 1} = {min(deltas[stage]) * 1e6} mks')
+	print(f'Avg time on stage {stage + 1} = {sum(deltas[stage]) / len(deltas[stage]) * 1e6} mks\n')
+	
+	connection.close()
+	
+	tex_table(stats, stages_count)
+\end{lstlisting}
+
+
+\section*{Вывод}
+В данном разделе была реализована конвейерная обработка данных: извлечение из базы данных, хеширование и сохранение паролей пользователей.
+\end{document}

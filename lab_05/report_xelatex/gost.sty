@@ -1,0 +1,80 @@
+\ProvidesPackage{gost}
+
+\usepackage[left=30mm, right=15mm, top=20mm, bottom=20mm, ignorefoot]{geometry}
+% лучше загружать именно в такой последовательности
+
+\usepackage[T2A]{fontenc} % вывод символов в корректной кодировке
+\usepackage[utf8]{inputenc} % ввод символов в корректной кодировке
+\usepackage[russian]{babel} % правила расстановки переносов и упрощенный ввод специальных символов
+
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+
+\usepackage{titlesec} % для изменения стиля разделов
+
+\usepackage[square,sort,comma,numbers]{natbib}
+\renewcommand{\bibsection}{\chapter*{Список использованных источников}}
+
+%\titleformat{command}[shape]{format}{label}{sep}{before-code}[after-code]
+\titleformat{\chapter}[hang]{\bfseries\LARGE}{\thechapter}{1em}{}[]
+
+\addto\captionsrussian{
+\renewcommand*\contentsname{Содержание}
+}
+
+\titleformat{name=\chapter, numberless}[hang]{\centering\bfseries\LARGE\MakeUppercase}{}{0em}{}
+\titlespacing{\chapter}{0pt}{-25pt}{0pt}
+\usepackage{ragged2e} % правильное выравнивание по левому\правому краям
+\usepackage{setspace}
+\onehalfspacing % полуторный интервал
+\setlength{\parindent}{1.25cm}
+
+% @ теперь обычный символ
+\makeatletter
+% Точки в оглавлении для разделов
+\renewcommand{\l@chapter}{\@dottedtocline{1}{0mm}{1.6em}}
+% @ опять специальный символ
+\makeatother
+
+\renewcommand{\labelitemi}{-}
+\renewcommand{\labelenumi}{\arabic{enumi})}
+
+\newcommand\chapstruct[1]{%
+  \chapter*{#1}%
+  \addcontentsline{toc}{chapter}{#1}}
+
+\newcommand{\hlinespace}{
+	\\[-1em]
+	\hline
+	\\[-1em]
+}
+
+\usepackage{indentfirst} % отступы параграфа после секции
+
+\usepackage{mathtools}
+\usepackage{amssymb}
+%\usepackage{esvect} надо бы установить, там правильные векторы
+\usepackage{array}
+\usepackage{breqn}
+\usepackage{float} % figure[H]
+
+\usepackage{listings}
+\lstset{
+	basicstyle=\footnotesize\ttfamily,
+	numbers=left,
+	numberstyle=\tiny,
+	numbersep=5pt,
+	frame=false,
+	breaklines=true,
+	breakatwhitespace=true,
+	inputencoding=utf8
+}
+
+\usepackage{caption}
+
+\captionsetup[figure]
+{justification=centering,singlelinecheck=false,labelsep=period}
+
+\captionsetup[table]{justification=raggedleft,singlelinecheck=false,labelsep=period}
+
+\captionsetup[lstlisting]{justification=raggedright,singlelinecheck=false,labelsep=period}

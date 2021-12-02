@@ -4,7 +4,6 @@ from hashlib import sha512
 import sqlite3
 
 import numpy as np
-from matplotlib import pyplot as plt
 
 from stats import UserStats, User
 from multiprocessing import Process, SimpleQueue, Manager
@@ -111,17 +110,13 @@ if __name__ == '__main__':
 
 
     connection = sqlite3.connect('app.db')
-    n = np.arange(5, 80, 10)
-    print(n)
     p_time = []
     s_time = []
     clear_db(connection)
     init_db(connection)
     fill_input_db(connection)
     _users = generate_users(get_list_size_from_db(connection))
-    # for amount in n:
     UserStats.cnt=0
-    # _users = generate_users(amount)
     pipeline_time = 0
     serial_time = 0
     cnt = 10
@@ -150,7 +145,16 @@ if __name__ == '__main__':
         pipeline_time += end_time - start_time
 
         start_time_ = time.time()
-        test_serial(_users)
+        workers = []
+        users_len = len(_users)
+        for j in range(stages_count):
+            magic = users_len // stages_count
+            worker = Process(target=test_serial, args=(_users[magic*i:magic*(i+1)],))
+            worker.start()
+            workers.append(worker)
+
+        for j in range(3):
+            workers[j].join()
         end_time_ = time.time()
         serial_time += end_time_ - start_time_
 
@@ -184,12 +188,4 @@ if __name__ == '__main__':
         print(f'Min time on stage {stage + 1} = {min(deltas[stage]) * 1e6} mks')
         print(f'Avg time on stage {stage + 1} = {sum(deltas[stage]) / len(deltas[stage]) * 1e6} mks\n')
 
-    # plt.plot(n, p_time, label='Конвейерная обработка')
-    # plt.plot(n, s_time, label='Последовательное выполнение')
-    #
-    # plt.legend(loc='upper left')
-    # plt.xlabel('Количество пользователей')
-    # plt.ylabel('Время работы (мrс)')
-    # # plt.title('Зависимость времени работы от размерности матрицы и количества потоков')
-    # plt.show()
     tex_table(stats, stages_count)

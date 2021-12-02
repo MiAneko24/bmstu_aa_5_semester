@@ -1,0 +1,35 @@
+\documentclass[12pt, a4paper]{report} % шрифт, размер бумаги, тип документа
+
+\usepackage{gost}
+\usepackage{appendix}
+\graphicspath{{images/}}
+
+\usepackage{subfiles} % Лучше подгружать в конце
+
+\bibliographystyle{utf8gost705u}
+\begin{document}
+\subfile{chapters/title}
+
+\tableofcontents
+
+\chapstruct{Введение}
+\subfile{chapters/introduction}
+
+\chapter{Аналитическая часть}
+\subfile{chapters/analytical}
+
+\chapter{Конструкторская часть}
+\subfile{chapters/engineering}
+
+\chapter{Технологическая часть}
+\subfile{chapters/technological.tex}
+
+\chapter{Экспериментальная часть}
+\subfile{chapters/experimental}
+
+\chapstruct{Заключение}
+\subfile{chapters/conclusion}
+
+\subfile{chapters/bibliography}
+
+\end{document}
