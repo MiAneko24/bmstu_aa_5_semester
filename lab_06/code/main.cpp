@@ -145,7 +145,7 @@ bool in_route(size_t a, size_t b, vector<size_t> route) {
 	return res;
 }
 
-void ant(size_t n, vector<vector<size_t>> d, size_t alpha, size_t beta, double q, size_t time_max, ofstream* file) {
+void ant(size_t n, vector<vector<size_t>> d, double alpha, double beta, double q, size_t time_max, ofstream* file) {
 
 	l_min = MAX;
 	route_min.clear();
@@ -231,10 +231,14 @@ int main()
 	}
 
 	double beg, end;
-	beg = clock();
-	brutforce(n, d);
-	end = clock();
-	cout << "Время работы полного перебора: " << double(end - beg) / CLOCKS_PER_SEC << endl;
+	int cnt = 20;
+	end = 0;
+	for (int i = 0; i < cnt; i++){
+		beg = clock();
+		brutforce(n, d);
+		end += (clock()-beg)/ CLOCKS_PER_SEC;
+	}
+	cout << "Время работы полного перебора: " << end/cnt  << endl;
 
 	cout << endl << "Путь: ";
 	print_arr(route_min);
@@ -255,10 +259,13 @@ int main()
 
 	result.close();
 
-	beg = clock();
-	ant(n, d, 0.75, 0.25, 0.25, 100, NULL);
-	end = clock();
-	cout << "Время работы муравьиного алгоритма: " << double(end - beg) / CLOCKS_PER_SEC << endl;
+	end = 0;
+	for (int i = 0; i < cnt; i++){
+		beg = clock();
+		ant(n, d, 0.75, 0.25, 0.25, 50, NULL);
+		end += (clock()-beg)/ CLOCKS_PER_SEC;
+	}
+	cout << "Время работы муравьиного алгоритма: " << end / cnt << endl;
 
 	cout << endl << "Путь: ";
 	print_arr(route_min);
