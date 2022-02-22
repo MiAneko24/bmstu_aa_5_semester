@@ -16,7 +16,10 @@ class DamerauLev(StringDistanceFinder):
             for j in range(1, m + 1):
                 step1 = mat[i][j - 1] + 1
                 step2 = mat[i - 1][j] + 1
-                elem = 0 if s1[i - 1] == s2[j - 1] else 1
+                if s1[i - 1] == s2[j - 1]:
+                    elem = 0
+                else:
+                    elem = 1
                 step3 = mat[i - 1][j - 1] + elem
                 step4 = np.inf
                 if i > 1 and j > 1 and s1[i - 1] == s2[j - 2] and s2[j - 1] == s1[i - 2]:

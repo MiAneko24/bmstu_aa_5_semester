@@ -113,6 +113,7 @@ void get_route(vector<size_t> all, size_t start, vector<size_t> &route, size_t &
 	size_t from;
 	double coin, sum;
 	bool flag;
+	len = 0;
 
 	for (size_t i = 0; i < n_1; i++) {
 		sum = 0; 
@@ -153,7 +154,7 @@ void ant(size_t n, vector<vector<size_t>> d, double alpha, double beta, double q
 
 	double tao_min, tao_start, Q;
 	vector<size_t> all(n);
-	Q = 350;
+	Q = 1;
 	tao_min = 0.001;
 	tao_start = 0.5;
 
@@ -197,6 +198,10 @@ void ant(size_t n, vector<vector<size_t>> d, double alpha, double beta, double q
 					tao[i][j] = tao_min;
 			}
 	}
+
+	get_route(all, 0, routes[0], lens[0], d, tao, attraction, alpha, beta);
+	l_min = lens[0];
+	route_min = routes[0];
 }
 
 int main()
@@ -320,7 +325,7 @@ int main()
 	end = 0;
 	for (int i = 0; i < cnt; i++){
 		beg = clock();
-		ant(n, d, 0, 1, 0.9, 150);
+		ant(n, d, 0, 1, 0.5, 150);
 		end += (clock()-beg)/ CLOCKS_PER_SEC;
 	}
 	cout << "Время работы муравьиного алгоритма: " << end / cnt << endl;
