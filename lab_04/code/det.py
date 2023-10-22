@@ -132,11 +132,11 @@ def ui():
         a = Dispatcher(size=size)
     else:
         a = Dispatcher(matrix=inputMatrix())
-    t = time.time()
-    print('Рекурсивно вычисленный определитель', calculateDet(a.m))
-    t = time.time() - t
-    print(f'Без потоков, время выполнения = {t}')
-    threadCount = 1
+    #t = time.time()
+    #print('Рекурсивно вычисленный определитель', calculateDet(a.m))
+    #t = time.time() - t
+    #print(f'Без потоков, время выполнения = {t}')
+    threadCount = 8
     while threadCount <= 32:
         a.threadCount = threadCount
         t = time.time()
@@ -146,7 +146,7 @@ def ui():
 
 
 def tests():
-    threadCount = 1
+    threadCount = 5
     sizes = []
     minMatrixSize = 4
     maxMatrixSize = 9
